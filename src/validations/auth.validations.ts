@@ -74,6 +74,8 @@ export const onboardSchema = Joi.object({
             "string.max": "Full name must be at most 100 characters long"
         }),
 
+    profilePic : Joi.string(),
+
     bio : Joi.string()
         .min(10)
         .max(2000)

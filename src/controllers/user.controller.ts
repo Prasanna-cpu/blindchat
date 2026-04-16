@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 export async function getRecommendedUsers(req : RequestWithUser, res : express.Response) {
 
     try{
-        const currentUserId = req.user._id
+        const currentUserId = req.user.id
         const currentUser = req.user
 
         const recommendedUsers = await User.find({
@@ -209,6 +209,8 @@ export async function getFriendRequests(req : RequestWithUser, res: express.Resp
 
 export async function getOutgoingFriendRequests(req : RequestWithUser , res : express.Response){
     try{
+        console.log(req.user._id)
+        console.log(req.user.id)
         const outgoingRequests = await FriendRequest.find({
             sender : req.user._id,
             status : "pending"

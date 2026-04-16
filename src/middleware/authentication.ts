@@ -41,6 +41,7 @@ export const protectedRoute = async(req : RequestWithUser, res : express.Respons
         }
 
         req.user = user
+        console.log(req.user)
         next()
     }
     catch(e){

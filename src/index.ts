@@ -7,6 +7,8 @@ import {timeOutMiddleware} from "./middleware/timeoutMiddleware";
 import cookieParser from "cookie-parser"
 import userRouter from "./routes/user.route";
 import chatRouter from "./routes/chat.routes";
+import cors from "cors"
+import {protectedRoute} from "./middleware/authentication";
 
 dotenv.config()
 
@@ -17,8 +19,12 @@ const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use(timeOutMiddleware(6000))
+app.use(timeOutMiddleware(30000))
 app.use(cookieParser())
+app.use(cors({
+    origin : "http://localhost:2000",
+    credentials : true
+}))
 
 
 app.get("/", (req, res) => {
@@ -26,8 +32,8 @@ app.get("/", (req, res) => {
 })
 
 app.use("/auth",authRouter)
-app.use("/api/users",userRouter)
-app.use("/api/chats",chatRouter)
+app.use("/api/users",protectedRoute,userRouter)
+app.use("/api/chats",protectedRoute,chatRouter)
 
 
 async function startServer() {

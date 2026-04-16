@@ -156,7 +156,6 @@ export async function login(req: express.Request, res: express.Response) {
             data: {
                 user: {
                     "email" : user.email,
-                    "token" : token
                 }
             }
         });
