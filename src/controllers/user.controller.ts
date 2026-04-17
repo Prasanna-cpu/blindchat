@@ -62,74 +62,71 @@ export async function getMyFriends(req : RequestWithUser, res : express.Response
     }
 }
 
-export async function sendFriendRequest(req : RequestWithUser, res : express.Response) {
-    try{
+export async function sendFriendRequest(req: RequestWithUser, res: express.Response) {
+    try {
         const myId = req.user._id
-
-        const { id } = req.params;
+        const { id } = req.params
 
         if (Array.isArray(id)) {
             return res.status(400).json({
                 status: 400,
                 message: "Invalid recipient ID"
-            });
+            })
         }
 
-        const recipientId = id;
+        const recipientId = id
 
-        if(myId == recipientId){
+        if (myId.toString() === recipientId) {
             return res.status(400).json({
-                status : 400,
-                message : "You cannot send a friend request to yourself"
+                status: 400,
+                message: "You cannot send a friend request to yourself"
             })
         }
 
         const recipient = await User.findById(recipientId)
-        if(!recipient){
+        if (!recipient) {
             return res.status(404).json({
-                status : 404,
-                message : "Recipient not found"
+                status: 404,
+                message: "Recipient not found"
             })
         }
 
-        if(recipient.friends.includes(myId)){
+        if (recipient.friends.some(id => id.equals(myId))) {
             return res.status(409).json({
-                status : 409,
-                message : "You are already friends with this user"
+                status: 409,
+                message: "You are already friends with this user"
             })
         }
 
         const existingRequest = await FriendRequest.findOne({
-            $or : [
-                {
-                    sender : myId,
-                    receiver : recipientId
-                },
-                {
-                    sender : recipientId,
-                    receiver : myId
-                }
-            ]
+            $or: [
+                { sender: myId, recipient: recipientId },
+                { sender: recipientId, recipient: myId }
+            ],
+            status: { $in: ["pending", "accepted"] }
         })
 
-        if(existingRequest){
+        if (existingRequest) {
             return res.status(409).json({
-                status : 409,
-                message : "You have already sent a friend request to this user"
+                status: 409,
+                message: "Friend request already exists"
             })
         }
 
         const friendRequest = await FriendRequest.create({
-            sender : myId,
-            recipient : new mongoose.Types.ObjectId(recipientId)
+            sender: myId,
+            recipient: recipientId
         })
 
+        return res.status(201).json({
+            status: 201,
+            data: friendRequest
+        })
 
-    }
-    catch(e){
+    } catch (e) {
         return res.status(500).json({
-            status : 500,
-            message : `Internal Server Error : ${e.message}`
+            status: 500,
+            message: `Internal Server Error: ${e.message}`
         })
     }
 }
@@ -138,6 +135,8 @@ export async function acceptFriendRequest(req : RequestWithUser, res : express.R
 
     try{
         const {id : requestId} = req.params
+
+        console.log(`Friend request id : ${requestId}`)
 
         const friendRequest = await FriendRequest.findById(requestId)
 
@@ -148,7 +147,10 @@ export async function acceptFriendRequest(req : RequestWithUser, res : express.R
             })
         }
 
-        if(friendRequest.recipient.toString() !== req.user._id){
+        console.log(`Friend request recipient : ${friendRequest.recipient}, Current user : ${req.user._id}`)
+
+        if(!friendRequest.recipient.equals(req.user._id)){
+            console.log("Unauthorized to accept this friend request")
             return res.status(403).json({
                 status : 403,
                 message : "You are not authorized to accept this friend request"
@@ -168,6 +170,11 @@ export async function acceptFriendRequest(req : RequestWithUser, res : express.R
             $addToSet : {
                 friends : friendRequest.sender
             }
+        })
+
+        return res.status(200).json({
+            status : 200,
+            message : "Friend request accepted successfully"
         })
     }
 
